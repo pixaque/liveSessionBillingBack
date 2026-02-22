@@ -4,7 +4,13 @@ const cors    = require('cors');
 const db      = require('./config/db');
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://live-session-billing-q2y5lhna4-pixaques-projects.vercel.app'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // ── Routes ──────────────────────────────────────────────────
@@ -27,4 +33,5 @@ app.use((err, _req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 LiveDrop API running on http://localhost:${PORT}`));
+// app.listen(PORT, () => console.log(`🚀 LiveDrop API running on http://localhost:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 LiveDrop API running on port ${PORT}`));
