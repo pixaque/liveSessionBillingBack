@@ -7,7 +7,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://live-session-billing-q2y5lhna4-pixaques-projects.vercel.app'
+    '*'
   ],
   credentials: true
 }));
