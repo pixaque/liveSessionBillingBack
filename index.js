@@ -4,11 +4,21 @@ const cors    = require('cors');
 const db      = require('./config/db');
 
 const app = express();
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://live-session-billing.vercel.app',
+  'https://livesessionbillingback-production.up.railway.app'
+];
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    '*'
-  ],
+  origin: function(origin, callback) {
+    // allow requests with no origin (like Postman or server-side requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
