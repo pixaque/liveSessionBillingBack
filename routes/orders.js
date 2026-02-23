@@ -29,6 +29,39 @@ router.get('/', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET check if customer has a pending order in this session
+// MUST be defined before /:id or Express will match 'check-existing' as an id
+router.get('/check-existing', async (req, res) => {
+  try {
+    const { customer_id, session_id } = req.query;
+    if (!customer_id) return res.status(400).json({ error: 'customer_id required' });
+
+    let sql = `
+      SELECT o.*, c.name AS customer_name, c.phone AS customer_phone,
+             s.name AS session_name
+      FROM orders o
+      JOIN customers c ON c.id = o.customer_id
+      LEFT JOIN sessions s ON s.id = o.session_id
+      WHERE o.customer_id = ?
+        AND o.status = 'pending'`;
+    const params = [customer_id];
+
+    if (session_id) {
+      sql += ' AND o.session_id = ?';
+      params.push(session_id);
+    }
+
+    sql += ' ORDER BY o.created_at DESC LIMIT 1';
+    const [[existing]] = await db.query(sql, params);
+
+    if (!existing) return res.json({ exists: false });
+
+    const [items] = await db.query('SELECT * FROM order_items WHERE order_id = ?', [existing.id]);
+    existing.items = items;
+    res.json({ exists: true, order: existing });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET single order
 router.get('/:id', async (req, res) => {
   try {
@@ -106,40 +139,6 @@ router.put('/:id', async (req, res) => {
       [req.params.id]
     );
     res.json(updated);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// GET check if customer has a pending order in this session
-// Usage: GET /api/orders/check-existing?customer_id=3&session_id=2
-router.get('/check-existing', async (req, res) => {
-  try {
-    const { customer_id, session_id } = req.query;
-    if (!customer_id) return res.status(400).json({ error: 'customer_id required' });
-
-    let sql = `
-      SELECT o.*, c.name AS customer_name, c.phone AS customer_phone,
-             s.name AS session_name
-      FROM orders o
-      JOIN customers c ON c.id = o.customer_id
-      LEFT JOIN sessions s ON s.id = o.session_id
-      WHERE o.customer_id = ?
-        AND o.status = 'pending'`;
-    const params = [customer_id];
-
-    // Only scope to session if one is selected
-    if (session_id) {
-      sql += ' AND o.session_id = ?';
-      params.push(session_id);
-    }
-
-    sql += ' ORDER BY o.created_at DESC LIMIT 1';
-    const [[existing]] = await db.query(sql, params);
-
-    if (!existing) return res.json({ exists: false });
-
-    const [items] = await db.query('SELECT * FROM order_items WHERE order_id = ?', [existing.id]);
-    existing.items = items;
-    res.json({ exists: true, order: existing });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
