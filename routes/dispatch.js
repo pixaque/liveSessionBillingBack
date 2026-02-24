@@ -35,12 +35,12 @@ router.get('/', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PATCH mark customer's orders as dispatched
+// PATCH mark customer's orders as dispatched (pending + processing)
 router.patch('/customer/:customerId', async (req, res) => {
   try {
     const { status = 'dispatched' } = req.body;
     await db.query(
-      "UPDATE orders SET status=? WHERE customer_id=? AND status='pending'",
+      "UPDATE orders SET status=? WHERE customer_id=? AND status IN ('pending','processing')",
       [status, req.params.customerId]
     );
     res.json({ ok: true });
